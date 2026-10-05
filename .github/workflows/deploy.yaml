@@ -1,0 +1,36 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # 1. CI (Continuous Integration): Test and verify Docker build
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Docker Image (Validation)
+        run: docker build -t nodedemo:latest .
+
+  # 2. CD (Continuous Deployment): Deploy to Render only if CI passes
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          echo "Deploying to Render..."
+          curl -f -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
